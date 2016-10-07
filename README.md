@@ -1,2 +1,2 @@
-# pre-req_check.sh
+# pre-req_check
 Pre-Requisite Checks made easy for Linux &amp; Solaris
