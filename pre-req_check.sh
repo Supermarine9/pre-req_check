@@ -189,7 +189,10 @@ packages()
 report()
 {
   header > $OUTPUT_FILE
+  echo -e '====================\nSYSTEM CONFIGURATION\n====================\n' >> ${OUTPUT_FILE}
   echo -e "${DISTRO}\n" >> $OUTPUT_FILE
+  free >> ${OUTPUT_FILE}
+  echo >> ${OUTPUT_FILE}
   df -h >> $OUTPUT_FILE
   case ${OPERATING_SYSTEM} in
     "oel"|"rhel"|"sles")
