@@ -155,7 +155,26 @@ packages()
       ;;
 
     "sles")
-      # Do SuSE packages here.
+      case ${MAJOR_VERSION} in
+        12) PACKAGELIST=""
+          ;;
+        11) PACKAGELIST=""
+          ;;
+        10) PACKAGELIST=""
+          ;;
+        *)
+          echo "Major Version ${MAJOR_VERSION} of ${DISTRO} not found."
+          exit 1
+          ;;
+      esac
+      for package in ${PACKAGELIST}
+      do
+        rpm -q --queryformat "%{NAME}-%{VERSION}-%{RELEASE}.%{ARCH} (%{VENDOR})\n" ${package} >> ${TMP_FILE}
+      done
+      echo -e '\n\n================================\nINSTALLED PRE-REQUISITE PACKAGES\n================================\n' >> ${OUTPUT_FILE}
+      grep "(" ${TMP_FILE} >> ${OUTPUT_FILE}
+      echo -e '\n\n==============================\nMISSING PRE_REQUISITE PACKAGES\n==============================\n' >> ${OUTPUT_FILE}
+      grep ^package ${TMP_FILE} >> ${OUTPUT_FILE}
       ;;
 
     "solaris")
