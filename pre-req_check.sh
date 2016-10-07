@@ -107,14 +107,17 @@ system()
 {
   header > $OUTPUT_FILE
   if [ -f /etc/oracle-release ]; then
-    OPERATING_SYSTEM=linux
-    DISTRO=/etc/oracle-release
+    OPERATING_SYSTEM=oel
+    VERSION=`cat /etc/oracle-release | cut -d" " -f5`
+    MAJOR_VERSION=`echo ${VERSION} | cut -d. -f1` 
   elif [ -f /etc/redhat-release ]; then
-    OPERATING_SYSTEM=linux
-    DISTRO=/etc/redhat-release
+    OPERATING_SYSTEM=rhel
+    VERSION=`cat /etc/redhat-release | cut -d" " -f7`
+    MAJOR_VERSION=`echo ${VERSION} | cut -d. -f1`
   elif [ -f /etc/release ] && grep "Oracle Solaris 1[0|1]" /etc/release > /dev/null; then
     OPERATING_SYSTEM=solaris
     DISTRO=/etc/release
+    # You'll have to come up with how Solaris does versions
   else
     echo -e "\n${BOLD}No supported Operating System found.${NORMAL}\n"
     exit 1
@@ -125,33 +128,49 @@ system()
 ################
 packages()
 {
-  touch $TMP_FILE
-  if [ $OPERATING_SYSTEM = linux ]; then
-    echo -e "Operating System: `cat $DISTRO`" >> $OUTPUT_FILE
-    if grep 7 $DISTRO > /dev/null; then
-      for package in binutils compat-libcap1 compat-libstdc++-33 gcc gcc-c++ glibc glibc-devel ksh libaio libaio-devel libgcc libstdc++ libstdc++-devel libXi libXtst make sysstat; do
-        rpm -q --queryformat "%{NAME}-%{VERSION}-%{RELEASE}.%{ARCH} (%{VENDOR})\n" $package >> $TMP_FILE
+  touch ${TMP_FILE}
+  
+  case ${OPERATING_SYSTEM} in
+    "oel|rhel")
+      case ${MAJOR_VERSION} in
+        7) PACKAGELIST="binutils compat-libcap1 compat-libstdc++-33 gcc gcc-c++ glibc glibc-devel ksh libaio libaio-devel libgcc libstdc++ libstdc++-devel libXi libXtst make sysstat"
+          ;;
+        6) PACKAGELIST="binutils compat-libcap1 compat-libstdc++-33 gcc gcc-c++ glibc glibc-devel ksh libaio libaio-devel libgcc libstdc++ libstdc++-devel libXext libXtst libX11 libXau libxcb libXi make sysstat"
+          ;;
+        5) PACKAGELIST="binutils compat-libstdc++-33 elfutils-libelf elfutils-libelf-devel elfutils-libelf-devel-static gcc gcc-c++ glibc glibc-common glibc-devel glibc-headers ksh libaio libaio-devel libgcc libgomp libstdc++ libstdc++-devel make sysstat"
+          ;;
+        *)
+          echo "Major Version ${MAJOR_VERSION} of ${DISTRO} not found."
+          exit 1
+          ;;
+      esac
+      for package in ${PACKAGELIST}
+      do
+        rpm -q --queryformat "%{NAME}-%{VERSION}-%{RELEASE}.%{ARCH} (%{VENDOR})\n" ${package} >> ${TMP_FILE}
       done
-      echo -e '\n\n================================\nINSTALLED PRE-REQUISITE PACKAGES\n================================\n' >> $OUTPUT_FILE
-      grep "(" $TMP_FILE >> $OUTPUT_FILE
-      echo -e '\n\n==============================\nMISSING PRE_REQUISITE PACKAGES\n==============================\n' >> $OUTPUT_FILE
-      grep ^package $TMP_FILE >> $OUTPUT_FILE
-    fi
-    if grep 6 $DISTRO > /dev/null; then
-      echo -e 'PRE-REQUISITE PACKAGES\n'
-      for package in binutils compat-libcap1 compat-libstdc++-33 gcc gcc-c++ glibc glibc-devel ksh libaio libaio-devel libgcc libstdc++ libstdc++-devel libXext libXtst libX11 libXau libxcb libXi make sysstat; do
-        rpm -q --queryformat "%{NAME}-%{VERSION}-%{RELEASE}.%{ARCH} (%{VENDOR})\n" $package >> $TMP_FILE
-      done
-    fi
-    if grep 5 $DISTRO > /dev/null; then
-      echo -e 'PRE-REQUISITE PACKAGES\n'
-      for package in binutils compat-libstdc++-33 elfutils-libelf elfutils-libelf-devel elfutils-libelf-devel-static gcc gcc-c++ glibc glibc-common glibc-devel glibc-headers ksh libaio libaio-devel libgcc libgomp libstdc++ libstdc++-devel make sysstat; do
-        rpm -q --queryformat "%{NAME}-%{VERSION}-%{RELEASE}.%{ARCH} (%{VENDOR})\n" $package >> $TMP_FILE
-      done
-    fi
-  fi
-  cat $OUTPUT_FILE
-  rm -f $TMP_FILE
+      echo -e '\n\n================================\nINSTALLED PRE-REQUISITE PACKAGES\n================================\n' >> ${OUTPUT_FILE}
+      grep "(" ${TMP_FILE} >> ${OUTPUT_FILE}
+      echo -e '\n\n==============================\nMISSING PRE_REQUISITE PACKAGES\n==============================\n' >> ${OUTPUT_FILE}
+      grep ^package ${TMP_FILE} >> ${OUTPUT_FILE}
+      ;;
+
+    "sles")
+      # Do SuSE packages here.
+      ;;
+
+    "solaris")
+      # Check Solaris packages here.
+      ;;
+
+    *)
+      echo "Operating System not suppored"
+      exit 1
+      ;;
+
+  esac
+
+  cat ${OUTPUT_FILE}
+  rm -f ${TMP_FILE}
   unset packages
 }
 
