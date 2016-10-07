@@ -131,7 +131,7 @@ packages()
   touch ${TMP_FILE}
   
   case ${OPERATING_SYSTEM} in
-    "oel|rhel")
+    "oel"|"rhel")
       case ${MAJOR_VERSION} in
         7) PACKAGELIST="binutils compat-libcap1 compat-libstdc++-33 gcc gcc-c++ glibc glibc-devel ksh libaio libaio-devel libgcc libstdc++ libstdc++-devel libXi libXtst make sysstat"
           ;;
